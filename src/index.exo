@@ -1,0 +1,112 @@
+context AuthContext {
+  @jwt role: String
+  @jwt id: String
+}
+
+@postgres
+module UserData {
+  @access(true)
+  type User {
+    @pk id: Uuid = generate_uuid()
+    did: String? @unique
+    firstName: String
+    middleName: String?
+    lastName: String
+    addresses: Set<Address>?
+    phoneNumbers: Set<PhoneNumber>?
+    occupation: Set<Occupation>?
+
+    @column("user1_id") user1: Set<Connection>?
+    @column("user2_id") user2: Set<Connection>?
+    @column("user_id") privileges: Set<Privilege>?
+
+    lastUpdated: Instant
+    created: Instant = now()
+  }
+
+  type Address {
+    @pk id: Uuid = generate_uuid()
+    streetAddress: String
+    streetAddress2: String?
+    city: String
+    state: String
+    zip: String
+    country: String
+    user: User
+    company: Company
+  }
+
+  type PhoneNumber {
+    @pk id: Uuid = generate_uuid()
+    @dbtype("VARCHAR(20)") number: String
+    type: String
+    country_code: Int
+    user: User
+    company: Company
+  }
+
+  type Company {
+    @pk id: Uuid = generate_uuid()
+    name: String
+    addresses: Set<Address>?
+    phoneNumbers: Set<PhoneNumber>?
+  }
+
+  type Occupation {
+    @pk id: Uuid = generate_uuid()
+    title: String
+    company: String
+    user: User
+  }
+}
+
+@postgres
+module ConnectionData {
+  type Connection {
+    @pk id: Int = autoIncrement()
+    startDate: Instant = now()
+    endDate: Instant
+    @column("user1_id") user1: User
+    @column("user2_id") user2: User
+
+  }
+}
+
+@postgres
+module PermissionData {
+  type Permission {
+    @pk id: Int = autoIncrement()
+    name: String
+    @column("resource_id") resource: Resource
+    @column("permission_id") parent: Set<Privilege>?
+    action: String
+  }
+}
+
+@postgres
+module PrivilegeData {
+  type Privilege {
+    @pk id: Int = autoIncrement()
+    @column("permission_id") permission: Permission
+    @column("user_id") user: User
+  }
+}
+
+@postgres
+module ResourceData {
+  type Resource {
+    @pk id: Int = autoIncrement()
+    name: String
+    description: String
+    @column("resource_id") parent: Set<Permission>?
+  }
+}
+
+@postgres
+module ScopeData {
+  type Scope {
+    @pk id: Int = autoIncrement()
+    name: String
+    description: String
+  }
+}
